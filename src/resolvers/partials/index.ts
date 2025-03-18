@@ -1,0 +1,10 @@
+export * as customResolvers from "./custom";
+export { default as trailResolvers } from "./trails";
+export { default as userResolvers } from "./users";
+export { default as eventResolvers } from "./events";
+export { default as docsResolvers } from "./docs";
+export { default as electionResolvers } from "./elections";
+export { default as messagingResolvers } from "./messaging";
+export { default as adminResolvers } from "./admin";
+export { default as runReportResolvers } from "./run-reports";
+export { default as accountResolvers } from "./accounts";

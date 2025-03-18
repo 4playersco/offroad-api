@@ -1,0 +1,727 @@
+enum Office {
+  PRESIDENT
+  VICE_PRESIDENT
+  SECRETARY
+  TREASURER
+}
+
+enum Title {
+  WEBMASTER
+  HISTORIAN
+  # RUN_LEADER
+  # RUN_MASTER
+  CHARTER_MEMBER
+}
+
+enum Poll {
+  ELECTION
+  RUN_SELECTION
+}
+
+enum TrailDifficulty {
+  UNKNOWN
+  EASY
+  BEGINNER #DEPRECATED
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum MigrationStatus {
+  NEEDED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum RSVPStatus {
+  NONE
+  CANT_GO
+  GOING
+  MAYBE
+}
+
+enum TrailCondition {
+  CLEAR
+  MINOR_ISSUES
+  MAJOR_ISSUES
+  CLOSED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum OutfitLevel {
+  MODIFIED
+  STOCK
+}
+
+enum ActivityMessageCode {
+  EVENT_ATTENDED
+  RUN_LED
+  EVENT_REVIEW_SUBMITTED
+  RUN_REPORT_SUBMITTED
+  GALLERY_PHOTO_SUBMITTED
+  GALLERY_PHOTOS_SUBMITTED
+  PROFILE_PHOTO_SUBMITTED
+  RIGBOOK_PHOTO_SUBMITTED
+  # COMMENTED
+  JOINED
+}
+
+enum MembershipMessageCode {
+  ACCOUNT_CREATED
+  ACCOUNT_UNLOCKED
+  ACCOUNT_CHANGED
+  ACCOUNT_REJECTED
+  DUES_PAID
+  OFFICE_ADDED
+  OFFICE_REMOVED
+  TITLE_ADDED
+  TITLE_REMOVED
+  MEMBERSHIP_GRANTED
+  MEMBERSHIP_ELIGIBLE
+  GUEST_RESTRICTED
+}
+
+enum EventType {
+  RUN
+  CAMPING
+  COLLECTION
+  FUNDRAISING
+  MEETING
+  CLINIC
+  SOCIAL
+}
+
+scalar DateTime
+
+enum Role {
+  ADMIN
+  OFFICER
+  RUN_MASTER
+  RUN_LEADER
+  USER
+}
+
+enum AccountStatus {
+  ACTIVE
+  PAST_DUE
+  DELINQUENT
+  REMOVED
+  RESIGNED
+  REJECTED
+  INACTIVE
+  LIMITED
+  LOCKED
+  DECEASED
+}
+
+enum AccountType {
+  FULL
+  ASSOCIATE
+  EMERITUS
+  GUEST
+}
+
+type SuccessMessage {
+  message: String
+}
+
+type SuccessTime {
+  time: DateTime
+}
+
+type EventCount {
+  count: Int
+}
+
+type Sample {
+  meow: Int
+}
+
+enum NewsletterAction {
+  SUBSCRIBE
+  UNSUBSCRIBE
+}
+
+enum NewsletterList {
+  GENERAL
+  MEMBERS
+}
+
+type Mutation {
+  register(
+    firstName: String
+    lastName: String
+    email: String!
+    confirmEmail: String!
+    source: String!
+  ): SuccessMessage
+  signUp(
+    email: String!
+    password: String!
+    firstName: String!
+    lastName: String!
+    username: String!
+    gender: Gender!
+    birthdate: DateTime!
+    token: String!
+  ): SuccessMessage!
+  unlockNewAccount(userId: ID!): SuccessMessage!
+  rejectNewAccount(userId: ID!, reason: String!): SuccessMessage!
+  login(email: String!, password: String!): SuccessMessage!
+  logout: SuccessMessage
+  requestReset(email: String!): SuccessMessage
+  resetPassword(
+    resetToken: String!
+    password: String!
+    confirmPassword: String!
+  ): User!
+  changePassword(password: String!, confirmPassword: String!): SuccessMessage
+  changeEmail(email: String!): SuccessMessage
+  updateRole(role: Role, userId: ID!): User
+  updateAccountType(accountType: AccountType, userId: ID!): User
+  updateAccountStatus(accountStatus: AccountStatus, userId: ID!): User
+  updateOffice(office: Office, userId: ID!): User
+  updateTitles(titles: [Title], userId: ID!): User
+  createEvent(event: UpsertEventInput!): SuccessMessage
+  deleteEvent(id: ID!): SuccessMessage
+  updateEvent(id: ID!, event: UpsertEventInput!): SuccessMessage
+  setRSVP(rsvp: RSVPInput): SuccessMessage
+  sendMessage(
+    to: [String!]!
+    subject: String
+    htmlText: String!
+  ): SuccessMessage
+  updateUserProfileSettings(data: UserUpdateInput!, id: ID!): SuccessMessage
+  updateUserAdminProfileSettings(
+    data: UserAdminUpdateInput!
+    id: ID!
+  ): SuccessMessage
+  updateAvatar(data: ImageUpdateInput!): SuccessMessage
+  deleteAvatar(avatar: CloudinaryImageInput!): SuccessMessage
+  updateRig(data: ImageUpdateInput!): SuccessMessage
+  deleteRig(rig: CloudinaryImageInput!): SuccessMessage
+  updateVehicle(id: ID, vehicle: VehicleInput!): SuccessMessage
+  submitElection(election: ElectionInput!): Election
+  submitVote(vote: VoteInput): SuccessMessage
+  createTrail(trail: TrailInput): SuccessMessage
+  updateTrail(trail: TrailInput!, id: ID!): SuccessMessage
+  payMembershipDues(data: DuesPaymentInput!): SuccessMessage
+  updateTrailImage(id: String!, image: CloudinaryImageInput!): SuccessMessage
+  logMembershipEvent(
+    date: DateTime!
+    code: String!
+    message: String!
+    userId: ID!
+  ): SuccessMessage
+  logActivityEvent(
+    message: String!
+    messageCode: String!
+    time: DateTime!
+    username: String!
+    link: String
+  ): SuccessMessage
+  notifications(settings: NotificationsSettingsInput): SuccessMessage
+  editNewsletterPreferences(
+    action: NewsletterAction!
+    list: NewsletterList!
+  ): SuccessMessage
+}
+
+type Query {
+  myself: User
+  users(
+    role: [Role]
+    accountStatus: [AccountStatus]
+    accountType: [AccountType]
+    titles: [Title]
+    office: [Office]
+    orderBy: [String]
+  ): [User]!
+  user(username: String): User!
+  getRegistration(token: String): User
+  getDuesLastReceived(username: String!): SuccessTime
+  getOfficer(office: Office!): User!
+  getMembers(
+    accountTypes: [AccountType]
+    accountStatuses: [AccountStatus]
+  ): [User]!
+  getRunLeaders: [User]!
+  getMessageRecipients: [User]!
+  getUpcomingEvents(count: Int, page: Int): [Event]!
+  upcomingEventsCount(count: Int, page: Int): EventCount!
+  getPastEvents(count: Int, page: Int): [Event]!
+  pastEventsCount: EventCount!
+  # getMyUpcomingEvents: [Event]!
+  getUserEvents(username: String!, eventType: EventType): [Event]!
+  getEvent(eventId: ID!): Event!
+  getNextEvent: Event
+  # getMyNextEvent: Event
+  getTrails: [Trail]!
+  getTrail(slug: String!): Trail
+  electionCandidates(
+    accountType: AccountType!
+    accountStatus: AccountStatus!
+  ): [User]!
+  getActiveElections: [Election]!
+  getActiveElectionsWithResults: [Election]!
+  getElection(id: ID!): Election!
+  getUserVote(ballot: ID): [Vote]!
+  getElections(startTime: DateTime, endTime: DateTime): [Election]!
+  getMembershipLogItems(
+    username: String!
+    messageCode: MembershipMessageCode!
+  ): [MembershipLogItem]!
+  getDocs: Docs!
+  # adminStats: AdminStats
+  # activeMembersPerYear: MemberCount
+  # guestsWithLockedAccounts: [User]!
+  # guestsAskedToJoin: [User]!
+  # guestsEligibleForMembership: [User]!
+  notifications: UserMeta
+  runReportInfo: Event
+  runReportUsers: [User]
+  newsletterPreferences(list: NewsletterList): NewsletterPreference!
+  getResetToken: String!
+}
+
+type NewsletterPreference {
+  status: NewsletterAction
+}
+
+type Registration {
+  id: ID
+  createdAt: DateTime!
+  # ipAddress: String!
+  firstName: String
+  lastName: String
+  email: String!
+  source: String!
+  token: String!
+  tokenExpiry: DateTime!
+}
+
+type User {
+  id: ID
+  createdAt: DateTime!
+  joined: DateTime
+  lastLogin: DateTime
+  firstName: String
+  lastName: String
+  email: String
+  gender: Gender
+  birthdate: DateTime
+  username: String
+  preferences: Preference
+  userMeta: UserMeta
+  contactInfo: ContactInfo
+  avatar: CloudinaryImage
+  titles: [Title]
+  role: Role!
+  accountStatus: AccountStatus
+  accountType: AccountType
+  office: Office
+  rig: RigImage
+  # vehicles: [Vehicle]
+  vehicle: Vehicle
+  comfortLevel: TrailDifficulty
+  activityLog: [ActivityLogItem]
+  membershipLog: [MembershipLogItem]
+  eventsRSVPd: [RSVP]
+  runsAttendedCount: Int
+  eventsLead: [Event]
+  bandaids: [Bandaid]
+  runReportsLogged: [RunReport]
+}
+
+type ContactInfo {
+  id: ID!
+  createdAt: DateTime
+  updatedAt: DateTime!
+  user: User # @relation(link: TABLE, name: "UserContactInfo")
+  street: String
+  city: String
+  state: String
+  zip: String
+  phone: String
+}
+
+type Preference {
+  id: ID!
+  createdAt: DateTime
+  updatedAt: DateTime!
+  user: User # @relation(link: TABLE, name: "UserPreferences")
+  emergencyContactName: String
+  emergencyContactPhone: String
+  photoPermissions: Boolean
+  showPhoneNumber: Boolean
+  tshirtSize: String
+}
+
+type UserMeta {
+  id: ID
+  emailVerified: Boolean
+  firstLoginComplete: Boolean
+  accountSetupComplete: Boolean
+  oldSiteMigrationComplete: Boolean
+  emailPublicNotifications: Boolean
+  emailMemberNotifications: Boolean
+  # emailEventAnnouncements: Boolean @default(value: true)
+}
+
+type ActivityLogItem {
+  id: ID!
+  time: DateTime!
+  message: String!
+  messageCode: ActivityMessageCode!
+  user: User!
+  link: String
+}
+
+type MembershipLogItem {
+  id: ID!
+  time: DateTime!
+  message: String!
+  messageCode: MembershipMessageCode!
+  user: User!
+  logger: User
+}
+
+type Event {
+  id: ID!
+  type: EventType!
+  title: String!
+  creator: User!
+  description: String
+  featuredImage: CloudinaryImage
+  startTime: DateTime
+  endTime: DateTime
+  host: User
+  rsvps: [RSVP]
+  address: String
+  trailDifficulty: TrailDifficulty
+  trailNotes: String
+  rallyAddress: String
+  membersOnly: Boolean
+  trail: Trail
+  bandaids: [Bandaid]
+  runReports: [RunReport]
+  maxAttendees: Int
+  maxRigs: Int
+  changeDisabled: Boolean
+}
+
+type RSVP {
+  id: ID!
+  member: User!
+  vehicle: Vehicle
+  event: Event!
+  status: RSVPStatus!
+  equipment: [String]
+  guestCount: Int
+  isRider: Boolean
+  # chaperone: User
+  # memberGuests: [User]
+  # paid: Boolean
+}
+
+input RSVPInput {
+  userId: ID
+  eventId: ID
+  status: RSVPStatus
+  equipment: [String]
+  guestCount: Int
+  vehicle: ID
+  isRider: Boolean
+  #paid: Boolean
+  #memberGuestUsernames: [String]
+}
+
+type Trail {
+  id: ID!
+  slug: String!
+  name: String
+  description: String
+  featuredImage: CloudinaryImage
+  trailheadCoords: String
+  # coords: Coords
+  address: String
+  avgDifficulty: TrailDifficulty
+  avgRatings: Float
+  currentConditions: String
+  conditionsLastReported: DateTime
+  favoriteCount: Int
+  pastEvents: [Event]
+  visitors: [User]
+}
+
+type RunReport {
+  id: ID!
+  startTime: DateTime
+  endTime: DateTime
+  reportFiled: DateTime
+  reporter: User
+  title: String
+  description: String
+  trail: Trail
+  event: Event
+  weather: String
+  difficulty: TrailDifficulty
+  rating: Float
+  conditions: Condition
+  conditionsNotes: String
+  favorite: Boolean
+}
+
+type Condition {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  report: RunReport! # @relation(name: "RunCondition")
+  status: TrailCondition!
+  notes: String
+}
+
+type Bandaid {
+  id: ID!
+  occurred: DateTime
+  event: Event
+  memberInvolved: User
+  title: String
+  description: String
+}
+
+input UserUpdateInput {
+  firstName: String!
+  lastName: String!
+  username: String!
+  gender: String!
+  birthdate: DateTime!
+  joined: DateTime
+  contactInfoId: ID
+  street: String!
+  city: String!
+  state: String!
+  zip: String!
+  phone: String!
+  avatar: CloudinaryImageInput
+  preferencesId: ID
+  emergencyContactName: String!
+  emergencyContactPhone: String!
+  comfortLevel: TrailDifficulty
+}
+
+input UserAdminUpdateInput {
+  id: String
+  titles: [Title]
+  office: String
+  role: String!
+  accountStatus: String!
+  accountType: String!
+}
+
+input UpsertEventInput {
+  type: String!
+  title: String!
+  description: String
+  startTime: DateTime!
+  endTime: DateTime!
+  address: String
+  trailDifficulty: TrailDifficulty
+  trailNotes: String
+  rallyAddress: String
+  membersOnly: Boolean
+  host: String!
+  trail: String
+  featuredImage: String
+  newFeaturedImage: CloudinaryImageInput
+  maxAttendees: Int
+  maxRigs: Int
+  changeDisabled: Boolean
+}
+
+input ElectionInput {
+  electionName: String!
+  startTime: String!
+  endTime: String!
+  races: [BallotInput!]!
+}
+
+input BallotInput {
+  id: String
+  title: String!
+  desc: String
+  candidates: [UserInput!]!
+  # votes: [Vote] @relation(name: "BallotVote")
+}
+
+input UserInput {
+  id: ID!
+}
+
+input VoteInput {
+  ballot: ID!
+  dateTime: DateTime!
+  candidate: ID
+}
+
+type Result {
+  candidate: User
+  count: Int!
+}
+
+type Election {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  electionName: String!
+  startTime: DateTime
+  endTime: DateTime
+  races: [Ballot]
+}
+
+type Vote {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  ballot: Ballot! # @relation(name: "BallotVote")
+  candidate: User # @relation(name: "VotesRecdUser")
+  voter: User! # @relation(name: "VotedUser")
+}
+
+type Ballot {
+  id: ID!
+  title: String!
+  desc: String
+  candidates: [User!]!
+  votes: [Vote]
+  results: [Result]
+}
+
+input ImageUpdateInput {
+  old: CloudinaryImageInput
+  new: CloudinaryImageInput!
+}
+
+input CloudinaryImageInput {
+  id: ID
+  publicId: String!
+  url: String!
+  smallUrl: String
+}
+
+type CloudinaryImage {
+  id: ID
+  publicId: String!
+  url: String!
+  smallUrl: String
+}
+
+type RigImage {
+  id: ID!
+  image: CloudinaryImage
+}
+
+input TrailInput {
+  name: String!
+  slug: String!
+  description: String
+  featuredImage: String
+  newFeaturedImage: CloudinaryImageInput
+  trailheadCoords: String
+  address: String
+}
+
+type Vehicle {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  year: Int!
+  make: String!
+  model: String!
+  name: String
+  trim: String
+  image: CloudinaryImage
+  outfitLevel: OutfitLevel
+  mods: [String] # @scalarList(strategy: RELATION)
+  rsvps: [RSVP] # @relation(name: "VehicleRSVP")
+}
+
+input VehicleInput {
+  year: Int
+  make: String
+  model: String
+  trim: String
+  name: String
+  outfitLevel: OutfitLevel
+  mods: [String]
+}
+
+type AdminStats {
+  activeFullMembers: Int
+  pastDueFullMembers: Int
+  delinquentFullMembers: Int
+  removedFullMembers: Int
+  resignedFullMembers: Int
+  inactiveFullMembers: Int
+  limitedGuestMembers: Int
+  lockedGuestMembers: Int
+
+  emeritusMembers: Int
+  deceasedMembers: Int
+  associateMembers: Int
+  guestMembers: Int
+  charterMembers: Int
+
+  fullMembersLastYear: Int
+  newFullMembersThisYear: Int
+  neededForQuorum: Int
+  neededToPassMotion: Int
+  neededToVoteOnNewMember: Int
+  newFullMembersAllowed: Int
+  fullMembersAllowed: Int
+}
+
+type MemberCount {
+  year: Int
+  count: Int
+}
+
+input DuesPaymentInput {
+  token: String!
+  # amount: Float!
+  # payingFor: [ID]
+}
+
+input NotificationsSettingsInput {
+  emailPublicNotifications: Boolean
+  emailMemberNotifications: Boolean
+  # emailEventAnnouncements: Boolean @default(value: true)
+}
+
+type Document {
+  name: String!
+  link: String!
+  date: DateTime! # last modifed?
+}
+
+type YearlyArchive {
+  year: String!
+  monthlyArchives: [MonthlyArchive]!
+}
+
+type MonthlyArchive {
+  month: String!
+  meetingMinutes: Document
+  newsletter: Document
+}
+
+type Docs {
+  bylaws: Document!
+  sors: Document!
+  archives: [YearlyArchive]!
+}
