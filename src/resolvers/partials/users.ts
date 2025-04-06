@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
 import { promisify } from "util";
 import cuid from "@bugsnag/cuid";
-import cookie, { type CookieSerializeOptions } from "cookie";
+import cookie, { type SerializeOptions } from "cookie";
 
 import {
   hasRole,
@@ -21,45 +21,43 @@ import {
   getUserResetTokenEmail,
   getUserRejectionEmail,
   convertKeysToCamelCase,
-} from "@/server/lib";
+} from "@/lib";
 import {
   accountCreated,
   accountUnlocked,
   accountRejected,
-} from "@/server/lib/membership-log";
-import { resetTokenTimeoutInMs, yearInMs } from "@/server/constants";
+} from "@/lib/membership-log";
+import { resetTokenTimeoutInMs, yearInMs } from "@/constants";
 import {
   AccountStatus,
   AccountType,
   MembershipMessageCode,
   Role,
-} from "@/types/main";
-import { ExtraContext } from "@/server/types";
-import { getMyself } from "@/server/data";
+} from "@/types/enums";
+import { getMyself } from "@/data";
+import { isDev } from "@/lib/";
 
 const promisifiedRandomBytes = promisify(randomBytes);
 
-const isDev = process.env.NODE_ENV === "development";
-
-const defaultTokenSettings: Partial<CookieSerializeOptions> = {
+const defaultTokenSettings: Partial<SerializeOptions> = {
   httpOnly: true,
   secure: !isDev,
   sameSite: isDev ? "lax" : "none",
 };
 
-const validTokenSettings: Partial<CookieSerializeOptions> = {
+const validTokenSettings: Partial<SerializeOptions> = {
   ...defaultTokenSettings,
   maxAge: yearInMs,
 };
 
-const expiredTokenSettings: Partial<CookieSerializeOptions> = {
+const expiredTokenSettings: Partial<SerializeOptions> = {
   ...defaultTokenSettings,
   maxAge: -1,
 };
 
 const users = {
   queries: {
-    myself(parent: any, args: any, ctx: ExtraContext) {
+    myself(parent: unknown, args: any, ctx: ExtraContext) {
       console.log("user", ctx.user);
       // Check if there is a current user
       if (!ctx?.user?.id) {
@@ -69,7 +67,7 @@ const users = {
 
       return getMyself(ctx.user.id);
     },
-    async users(parent: any, args: any, ctx: ExtraContext) {
+    async users(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -136,7 +134,7 @@ const users = {
       results.sort((a: any, b: any) => (a.firstName > b.firstName ? 1 : -1));
       return results;
     },
-    async user(parent: any, args: any, ctx: ExtraContext) {
+    async user(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -174,7 +172,7 @@ const users = {
         throw new Error("User cannot be found");
       }
     },
-    async getRegistration(parent: any, args: any, ctx: ExtraContext) {
+    async getRegistration(parent: unknown, args: any, ctx: ExtraContext) {
       const registration = await ctx.db
         .select("registration")
         .where("token", "=", args.token)
@@ -195,7 +193,7 @@ const users = {
 
       return registration[0];
     },
-    async getDuesLastReceived(parent: any, args: any, ctx: ExtraContext) {
+    async getDuesLastReceived(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -227,7 +225,7 @@ const users = {
 
       return { time: results.length > 0 ? results[0].time : null };
     },
-    async getOfficer(parent: any, args: any, ctx: ExtraContext) {
+    async getOfficer(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -254,7 +252,7 @@ const users = {
 
       return results.length > 0 ? results[0] : {};
     },
-    async getMembers(parent: any, args: any, ctx: ExtraContext) {
+    async getMembers(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -297,7 +295,7 @@ const users = {
 
       return results;
     },
-    async getRunLeaders(parent: any, args: any, ctx: ExtraContext) {
+    async getRunLeaders(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -337,7 +335,7 @@ const users = {
     },
   },
   mutations: {
-    async register(parent: any, args: any, ctx: ExtraContext) {
+    async register(parent: unknown, args: any, ctx: ExtraContext) {
       const { firstName, lastName, email, confirmEmail, source } = args;
 
       // VALIDATION
@@ -424,7 +422,7 @@ const users = {
           throw new Error(err.toString());
         });
     },
-    async signUp(parent: any, args: any, ctx: ExtraContext) {
+    async signUp(parent: unknown, args: any, ctx: ExtraContext) {
       const email = args.email.toLowerCase();
 
       // VALIDATION
@@ -517,7 +515,7 @@ const users = {
         throw new Error(error);
       }
     },
-    async unlockNewAccount(parent: any, args: any, ctx: ExtraContext) {
+    async unlockNewAccount(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -569,7 +567,7 @@ const users = {
           throw new Error(err);
         });
     },
-    async rejectNewAccount(parent: any, args: any, ctx: ExtraContext) {
+    async rejectNewAccount(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -675,7 +673,7 @@ const users = {
       // Return the user
       return { message: "Successfully logged in" };
     },
-    logout(parent: any, args: any, ctx: ExtraContext) {
+    logout(parent: unknown, args: any, ctx: ExtraContext) {
       ctx.res.setHeader(
         "Set-Cookie",
         cookie.serialize("token", "", expiredTokenSettings),
@@ -728,7 +726,7 @@ const users = {
           throw new Error(err.toString());
         });
     },
-    async resetPassword(parent: any, args: any, ctx: ExtraContext) {
+    async resetPassword(parent: unknown, args: any, ctx: ExtraContext) {
       // Check if passwords match
       if (args.password !== args.confirmPassword) {
         throw new Error("Passwords do not match");
@@ -781,7 +779,7 @@ const users = {
         resetTokenExpiry: null,
       };
     },
-    async changePassword(parent: any, args: any, ctx: ExtraContext) {
+    async changePassword(parent: unknown, args: any, ctx: ExtraContext) {
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
       }
@@ -799,7 +797,7 @@ const users = {
 
       return { message: "Your password has been changed" };
     },
-    async changeEmail(parent: any, args: any, ctx: ExtraContext) {
+    async changeEmail(parent: unknown, args: any, ctx: ExtraContext) {
       const email = args.email.toLowerCase();
 
       if (!ctx?.user?.id) {

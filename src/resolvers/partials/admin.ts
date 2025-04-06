@@ -3,15 +3,16 @@ import {
   hasAccountStatus,
   determineTitleChanges,
   determineOfficeChanges,
-} from "@/server/lib";
-import { accountChanged, accountUnlocked } from "@/server/lib/membership-log";
-import { AccountStatus, Role } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+} from "@/lib";
+import { accountChanged, accountUnlocked } from "@/lib/membership-log";
+import { AccountStatus, Role } from "@/types/enums";
+import type { ExtraContext } from "@/types/server";
+
 import cuid from "@bugsnag/cuid";
 
 const admin = {
   queries: {
-    // async adminStats(parent: any, args: any, ctx: ExtraContext) {
+    // async adminStats(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -87,7 +88,7 @@ const admin = {
     //     fullMembersAllowed
     //   };
     // },
-    // async activeMembersPerYear(parent: any, args: any, ctx: ExtraContext) {
+    // async activeMembersPerYear(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -110,7 +111,7 @@ const admin = {
     //     }
     //   ];
     // },
-    // async guestsWithLockedAccounts(parent: any, args: any, ctx: ExtraContext) {
+    // async guestsWithLockedAccounts(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -129,7 +130,7 @@ const admin = {
     //     info
     //   );
     // },
-    // async guestsAskedToJoin(parent: any, args: any, ctx: ExtraContext) {
+    // async guestsAskedToJoin(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -148,7 +149,7 @@ const admin = {
     //     info
     //   );
     // },
-    // async guestsEligibleForMembership(parent: any, args: any, ctx: ExtraContext) {
+    // async guestsEligibleForMembership(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -181,7 +182,11 @@ const admin = {
     // }
   },
   mutations: {
-    async updateRole(parent: any, args: any, ctx: ExtraContext) {
+    async updateRole(
+      parent: unknown,
+      args: { userId: string; role: Role },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -213,7 +218,7 @@ const admin = {
         throw new Error("Unable to update role");
       }
     },
-    async updateAccountType(parent: any, args: any, ctx: ExtraContext) {
+    async updateAccountType(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -243,7 +248,7 @@ const admin = {
         ),
       ]);
     },
-    async updateAccountStatus(parent: any, args: any, ctx: ExtraContext) {
+    async updateAccountStatus(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -291,7 +296,7 @@ const admin = {
         ),
       ]);
     },
-    async updateOffice(parent: any, args: any, ctx: ExtraContext) {
+    async updateOffice(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -348,7 +353,7 @@ const admin = {
         ),
       ]);
     },
-    async updateTitles(parent: any, args: any, ctx: ExtraContext) {
+    async updateTitles(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");

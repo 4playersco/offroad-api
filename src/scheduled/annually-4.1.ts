@@ -9,9 +9,9 @@ import {
   sendTransactionalEmail,
   getNotifyUserOfDelinquentStatusEmail,
   getNotifyBoardOfDelinquentsEmail,
-} from "@/server/lib";
-import { accountChanged } from "@/server/lib/membership-log";
-import { AccountStatus, AccountType } from "@/types/main";
+} from "@/lib";
+import { accountChanged } from "@/lib/membership-log";
+import { AccountStatus, AccountType } from "@/types/server";
 
 const apr1 = async () => {
   console.log("It is April 1st - game time!");

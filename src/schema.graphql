@@ -21,7 +21,7 @@ enum Poll {
 enum TrailDifficulty {
   UNKNOWN
   EASY
-  BEGINNER #DEPRECATED
+  #BEGINNER #DEPRECATED
   INTERMEDIATE
   ADVANCED
 }

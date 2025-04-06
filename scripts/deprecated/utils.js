@@ -317,7 +317,7 @@ module.exports = {
     // 07201990
     if (
       trimmedBday.length === 8 &&
-      !trimmedBday.includes("/") &&
+      !trimmedBday.includes("@/") &&
       !trimmedBday.includes("-") &&
       !trimmedBday.includes(".") &&
       !trimmedBday.includes(" ") &&
@@ -333,7 +333,7 @@ module.exports = {
     // 091989
     if (
       trimmedBday.length === 6 &&
-      !trimmedBday.includes("/") &&
+      !trimmedBday.includes("@/") &&
       !trimmedBday.includes("-") &&
       !trimmedBday.includes(".") &&
       !trimmedBday.includes(" ") &&
@@ -349,11 +349,11 @@ module.exports = {
     if (
       trimmedBday.length === 7 &&
       Number.isInteger(parseInt(trimmedBday.substr(0, 2), 10)) &&
-      trimmedBday.indexOf("/") === 2 &&
+      trimmedBday.indexOf("@/") === 2 &&
       Number.isInteger(parseInt(trimmedBday.substr(-4), 10)) &&
-      trimmedBday.charAt(4) !== "/"
+      trimmedBday.charAt(4) !== "@/"
     ) {
-      const [month, year] = trimmedBday.split("/");
+      const [month, year] = trimmedBday.split("@/");
 
       return new Date(`${month}/1/${year.substr(2)} 12:00:00`).toISOString();
     }

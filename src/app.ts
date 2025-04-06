@@ -23,14 +23,15 @@ import * as loaders from "@/loaders";
 import { DateTime } from "@/resolvers/partials/custom";
 import db from "@/db/client";
 import { getUserInfo, getUserIdFromToken, requireHTTPS } from "@/data";
-import { ExtraContext } from "./types/main";
+import { ExtraContext } from "./types/server";
 
 dotevnv.config();
 
 const PORT = parseInt(process.env.PORT as string, 10);
+const NODE_ENV = process.env.NODE_ENV;
 
 if (!PORT) {
-  console.log(`No port value specified...`);
+  console.error(`No port value specified...`);
 }
 
 const corsOptions = {
@@ -41,13 +42,13 @@ const corsOptions = {
 const app = express();
 const httpServer = http.createServer(app);
 
-if (process.env.NODE_ENV !== "production") {
-  app.get("/backblaze", getDocs);
+if (NODE_ENV !== "production") {
+  app.get("@/backblaze", getDocs);
 }
 
 app.use(requireHTTPS);
-app.get("/calendar/upcoming/:count", getUpcoming);
-app.get("/calendar/ical", getIcal);
+app.get("@/calendar/upcoming/:count", getUpcoming);
+app.get("@/calendar/ical", getIcal);
 app.use(cors<cors.CorsRequest>(corsOptions));
 app.use(cookieParser());
 app.use(helmet()); // ?
@@ -72,7 +73,7 @@ const server = new ApolloServer<ExtraContext>({
 await server.start();
 
 app.use(
-  "/graphql",
+  "@/graphql",
   express.json(),
   expressMiddleware(server, {
     context: async () => ({
@@ -82,11 +83,12 @@ app.use(
   }),
 );
 
-if (process.env.NODE_ENV === "development") {
+if (NODE_ENV === "development") {
   await new Promise<void>((resolve) =>
-    httpServer.listen({ port: 4000 }, resolve),
+    httpServer.listen({ port: PORT }, resolve),
   );
-  console.log(`🚀 Server ready at http://localhost:4000/graphql`);
+  // eslint-disable-next-line no-console
+  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 } else {
   // LAMBDA
   // export default startServerAndCreateLambdaHandler(

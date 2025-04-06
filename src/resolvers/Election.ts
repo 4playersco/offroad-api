@@ -1,4 +1,4 @@
-import { ExtraContext } from "../types/main";
+import { ExtraContext } from "../types/server";
 
 const Election = {
   races(election: any, args: any, ctx: ExtraContext) {

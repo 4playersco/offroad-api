@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { startOfDay } from "date-fns";
 
-import { jan1, mar1, apr1, nightly } from "@/server/scheduled";
-import { formatError } from "@/server/lib";
+import { jan1, mar1, apr1, nightly } from "@/scheduled";
+import { formatError } from "@/lib";
 
 type Script = "jan1" | "mar1" | "apr1" | "nightly";
 type Status = {
@@ -13,7 +13,7 @@ type ScheduledResponse = Partial<Record<Script, Status>>[];
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ScheduledResponse>
+  res: NextApiResponse<ScheduledResponse>,
 ) {
   const date = startOfDay(new Date());
   const response: ScheduledResponse = [];

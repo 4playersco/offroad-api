@@ -1,5 +1,5 @@
 import { RawUser } from "../types/data";
-import { User } from "../types/main";
+import { User } from "../types/server";
 import { eventsFromDb } from "./index";
 
 const userFromDb = (dbUser: RawUser): User => ({

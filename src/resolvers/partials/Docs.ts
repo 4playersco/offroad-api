@@ -1,11 +1,6 @@
-import { hasAccountStatus } from "@/server/lib";
-import {
-  getSingleFile,
-  getAllFiles,
-  formatArchives,
-} from "@/server/lib/docs-bucket";
-import { ExtraContext } from "@/server/types";
-import { AccountStatus } from "@/types/main";
+import { hasAccountStatus } from "@/lib";
+import { getSingleFile, getAllFiles, formatArchives } from "@/lib/docs-bucket";
+import { AccountStatus } from "@/types/enums";
 
 const BYLAWS_PREFIX = "bylaws/";
 const SORS_PREFIX = "sors/";
@@ -28,7 +23,7 @@ const NEWSLETTERS_PREFIX = "newsletters/";
 const docs = {
   mutations: {},
   queries: {
-    async getDocs(parent: any, args: any, ctx: ExtraContext) {
+    async getDocs(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx.user?.id) {
         throw new Error("User must be logged in");

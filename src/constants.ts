@@ -27,6 +27,9 @@ export const meetingEndTime = "20:30"; // 8:30pm
 export const HASH_SECRET = process.env.HASH_SECRET ?? "";
 export const AUTH_SECRET = process.env.AUTH_SECRET ?? "";
 
+export const DEFAULT_FULL_MEMBER_DUES_AMOUNT = 40;
+export const DEFAULT_ASSOCIATE_MEMBER_DUES_AMOUNT = 20;
+
 /**
  * Check Logged-in
  * Check Role

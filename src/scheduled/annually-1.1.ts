@@ -17,7 +17,7 @@ import {
   meetingStartTime,
   meetingEndTime,
   timezone,
-} from "@/server/constants";
+} from "@/constants";
 
 import {
   AccountStatus,
@@ -25,8 +25,8 @@ import {
   EventRsvp,
   EventType,
   Office,
-} from "@/types/main";
-import { Month } from "@/server/types";
+} from "@/types/server";
+import { Month } from "@/types/server";
 
 import db from "@/db/client";
 import {
@@ -37,8 +37,8 @@ import {
   getNotifyWebmasterOfMeetingEventsGeneration,
   sendTransactionalEmail,
   getSecondMondayInMonth,
-} from "@/server/lib";
-import { accountChanged } from "@/server/lib/membership-log";
+} from "@/lib";
+import { accountChanged } from "@/lib/membership-log";
 import cuid from "@bugsnag/cuid";
 
 const jan1 = async () => {

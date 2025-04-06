@@ -1,5 +1,5 @@
-import { MembershipMessageCode } from "@/types/main";
-import { ContextUser } from "@/server/types";
+import { ContextUser } from "@/types/server";
+import { MembershipMessageCode } from "@/types/enums";
 
 export const accountCreated = () => ({
   message: "Account created",

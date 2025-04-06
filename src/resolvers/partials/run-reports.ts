@@ -1,9 +1,8 @@
-import { EventRsvp } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+import { EventRsvp } from "@/types/enums";
 
 const runReports = {
   queries: {
-    async runReportInfo(parent: any, args: any, ctx: ExtraContext) {
+    async runReportInfo(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -20,7 +19,7 @@ const runReports = {
         .andWhere("rsvp.status", EventRsvp.GOING)
         .limit(1);
     },
-    async runReportUsers(parent: any, args: any, ctx: ExtraContext) {
+    async runReportUsers(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");

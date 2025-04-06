@@ -16,8 +16,8 @@ import {
   hasRole,
   hasAccountType,
   hasAccountStatus,
-} from "@/server/lib";
-import { duesPaid, accountChanged } from "@/server/lib/membership-log";
+} from "@/lib";
+import { duesPaid, accountChanged } from "@/lib/membership-log";
 
 import {
   AccountStatus,
@@ -25,12 +25,13 @@ import {
   NewsletterAction,
   NewsletterList,
   Role,
-} from "@/types/main";
-import { ExtraContext } from "@/server/types";
-import { isSelf } from "@/server/lib/accounts";
+} from "@/types/enums";
+
+import { isSelf } from "@/lib/accounts";
 import snakeCase from "lodash/snakeCase";
 import cuid from "@bugsnag/cuid";
-import { newProfilePhoto, newRigbookPhoto } from "@/server/lib/activity-log";
+import { newProfilePhoto, newRigbookPhoto } from "@/lib/activity-log";
+import type { ExtraContext } from "@/types/server";
 
 cloudinary.config({
   cloud_name: process.env.CLOUNDINARY_NAME,
@@ -42,7 +43,11 @@ const promisifiedDestroy = promisify(cloudinary.uploader.destroy);
 
 const accounts = {
   queries: {
-    async getMembershipLogItems(parent: any, args: any, ctx: ExtraContext) {
+    async getMembershipLogItems(
+      parent: unknown,
+      args: { username: string; messageCode: string },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -79,7 +84,7 @@ const accounts = {
         .andWhere({ user: id })
         .orderBy("time DESC");
     },
-    async notifications(parent: any, args: any, ctx: ExtraContext) {
+    async notifications(parent: unknown, args: unknown, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -100,7 +105,11 @@ const accounts = {
 
       return null;
     },
-    async newsletterPreferences(parent: any, args: any, ctx: ExtraContext) {
+    async newsletterPreferences(
+      parent: unknown,
+      args: { list: NewsletterList },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -131,9 +140,8 @@ const accounts = {
               ? NewsletterAction.SUBSCRIBE
               : NewsletterAction.UNSUBSCRIBE,
         };
-      } catch (error) {
-        // @ts-ignore
-        if (error.status === 404) {
+      } catch (error: unknown) {
+        if ((error as { status?: number }).status === 404) {
           return { status: NewsletterAction.UNSUBSCRIBE };
         } else {
           console.log(error);
@@ -143,7 +151,11 @@ const accounts = {
     },
   },
   mutations: {
-    async payMembershipDues(parent: any, args: any, ctx: ExtraContext) {
+    async payMembershipDues(
+      parent: unknown,
+      args: { data: { token: string } },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -228,11 +240,14 @@ const accounts = {
           throw new Error(charge.failure_message || "Error processing charge");
         }
       } catch (error) {
-        // @ts-ignore
         throw new Error(error.message);
       }
     },
-    async logMembershipEvent(parent: any, args: any, ctx: ExtraContext) {
+    async logMembershipEvent(
+      parent: unknown,
+      args: { date: string; message: string; code: string; userId: string },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -260,7 +275,17 @@ const accounts = {
 
       return { message: "Item successfully logged" };
     },
-    async logActivityEvent(parent: any, args: any, ctx: ExtraContext) {
+    async logActivityEvent(
+      parent: unknown,
+      args: {
+        time: string;
+        message: string;
+        messageCode: string;
+        username: string;
+        link?: string;
+      },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -289,7 +314,11 @@ const accounts = {
 
       return { message: "Item successfully logged" };
     },
-    async notifications(parent: any, args: any, ctx: ExtraContext) {
+    async notifications(
+      parent: unknown,
+      args: { settings: Record<string, boolean> },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -342,7 +371,15 @@ const accounts = {
 
       throw new Error("Unable to update notifications settings");
     },
-    async editNewsletterPreferences(parent: any, args: any, ctx: ExtraContext) {
+    async editNewsletterPreferences(
+      parent: unknown,
+      args: {
+        settings: Record<string, boolean>;
+        list: NewsletterList;
+        action: NewsletterAction;
+      },
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -384,8 +421,8 @@ const accounts = {
           subscriberHash,
         );
         mailchimpUser = result;
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
       }
 
       // SUBSCRIBE
@@ -408,12 +445,10 @@ const accounts = {
               status: "subscribed",
             });
             return { message: "Email successfully subscribed" };
-          } catch (e) {
-            // @ts-ignore
-            const text = JSON.parse(err.response.res.text);
+          } catch (error) {
+            const text = JSON.parse(error.response.res.text);
 
-            // @ts-ignore
-            if (err.status === 400 && text.title === "Member Exists") {
+            if (error.status === 400 && text.title === "Member Exists") {
               throw new Error("Email already subscribed");
             } else {
               throw new Error("Failed to subscribe email");
@@ -432,12 +467,10 @@ const accounts = {
             });
 
             return { message: "Email successfully subscribed" };
-          } catch (err) {
-            // @ts-ignore
-            const text = JSON.parse(err.response.res.text);
+          } catch (error) {
+            const text = JSON.parse(error.response.res.text);
 
-            // @ts-ignore
-            if (err.status === 400 && text.title === "Member Exists") {
+            if (error.status === 400 && text.title === "Member Exists") {
               throw new Error("Email already subscribed");
             } else {
               throw new Error("Failed to subscribe email");
@@ -465,7 +498,7 @@ const accounts = {
       }
     },
   },
-  // async convertToMember(parent: any, args: any, ctx: ExtraContext) {
+  // async convertToMember(parent: unknown, args: any, ctx: ExtraContext) {
   // Set joined date
   // Set account_type to FULL / ASSOCIATE
   // Set account_status to PAST_DUE
@@ -473,7 +506,34 @@ const accounts = {
   // Create membership log entry
   // Create activity log entry
   // },
-  async updateUserProfileSettings(parent: any, args: any, ctx: ExtraContext) {
+  async updateUserProfileSettings(
+    parent: unknown,
+    args: {
+      firstName: string;
+      lastName: string;
+      username: string;
+      gender: "male" | "female" | "non-binary" | "other" | null;
+      birthdate: string | number | Date;
+      joined: string | null;
+      comfortLevel: string | number | null;
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+      phone: string;
+      emergencyContactName: string;
+      emergencyContactPhone: string;
+      showPhoneNumber: boolean;
+      vehicle: {
+        id: string;
+        outfitLevel?: number;
+        mods: string[];
+        [key: string]: string | number | boolean | null | string[];
+      };
+      id: string;
+    },
+    ctx: ExtraContext,
+  ) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");
@@ -501,15 +561,13 @@ const accounts = {
       await ctx
         .db("user")
         .update({
-          firstName: args.data.firstName,
-          lastName: args.data.lastName,
-          username: args.data.username,
-          gender: args.data.gender,
-          birthdate: new Date(args.data.birthdate).toISOString(),
-          joined: args.data.joined
-            ? new Date(args.data.joined).toISOString()
-            : null,
-          comfortLevel: args.data.comfortLevel,
+          firstName: args.firstName,
+          lastName: args.lastName,
+          username: args.username,
+          gender: args.gender,
+          birthdate: new Date(args.birthdate).toISOString(),
+          joined: args.joined ? new Date(args.joined).toISOString() : null,
+          comfortLevel: args.comfortLevel,
         })
         .where({ id: args.id });
 
@@ -518,11 +576,11 @@ const accounts = {
         await ctx
           .db("contact_info")
           .update({
-            street: args.data.street,
-            city: args.data.city,
-            state: args.data.state,
-            zip: args.data.zip,
-            phone: args.data.phone,
+            street: args.street,
+            city: args.city,
+            state: args.state,
+            zip: args.zip,
+            phone: args.phone,
           })
           .where({ id: existingContactInfo.id });
       } else {
@@ -532,11 +590,11 @@ const accounts = {
           // Create contact_info entry
           ctx.db("contact_info").insert({
             id: newContactInfoId,
-            street: args.data.street,
-            city: args.data.city,
-            state: args.data.state,
-            zip: args.data.zip,
-            phone: args.data.phone,
+            street: args.street,
+            city: args.city,
+            state: args.state,
+            zip: args.zip,
+            phone: args.phone,
           }),
           // Connect user to contact info entry
           ctx.db("_user_contact_info").insert({
@@ -551,9 +609,9 @@ const accounts = {
         await ctx
           .db("preference")
           .update({
-            emergency_contact_name: args.data.emergencyContactName,
-            emergency_contact_phone: args.data.emergencyContactPhone,
-            show_phone_number: args.data.showPhoneNumber,
+            emergency_contact_name: args.emergencyContactName,
+            emergency_contact_phone: args.emergencyContactPhone,
+            show_phone_number: args.showPhoneNumber,
           })
           .where({ id: existingPreferences.id });
       } else {
@@ -563,9 +621,9 @@ const accounts = {
           // Create preference entry
           ctx.db("preference").insert({
             id: newPrefId,
-            emergency_contact_name: args.data.emergencyContactName,
-            emergency_contact_phone: args.data.emergencyContactPhone,
-            show_phone_number: args.data.showPhoneNumber,
+            emergency_contact_name: args.emergencyContactName,
+            emergency_contact_phone: args.emergencyContactPhone,
+            show_phone_number: args.showPhoneNumber,
           }),
           // Connect user to preference entry
           ctx.db("_user_preferences").insert({
@@ -583,8 +641,17 @@ const accounts = {
     }
   },
   async updateUserAdminProfileSettings(
-    parent: any,
-    args: any,
+    parent: unknown,
+    args: {
+      id: string;
+      data: {
+        accountType: AccountType;
+        accountStatus: AccountStatus;
+        role: Role;
+        office: string | null;
+        titles: string[];
+      };
+    },
     ctx: ExtraContext,
   ) {
     // Logged in?
@@ -617,7 +684,7 @@ const accounts = {
       .from("user_titles")
       .where({ node_id: args.id });
 
-    let membershipLogs: any = [];
+    let membershipLogs = [];
 
     const [titlesToRemove, titlesToAdd, titleLogs] = determineTitleChanges(
       currentTitles,
@@ -694,7 +761,7 @@ const accounts = {
 
     return { message: "User profile settings updated" };
   },
-  async updateAvatar(parent: any, args: any, ctx: ExtraContext) {
+  async updateAvatar(parent: unknown, args: any, ctx: ExtraContext) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");
@@ -757,7 +824,7 @@ const accounts = {
 
     return { message: "Avatar updated" };
   },
-  async deleteAvatar(parent: any, args: any, ctx: ExtraContext) {
+  async deleteAvatar(parent: unknown, args: any, ctx: ExtraContext) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");
@@ -789,7 +856,7 @@ const accounts = {
 
     return { message: "Avatar deleted" };
   },
-  async updateRig(parent: any, args: any, ctx: ExtraContext) {
+  async updateRig(parent: unknown, args: any, ctx: ExtraContext) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");
@@ -844,7 +911,7 @@ const accounts = {
 
     return { message: "Rig image updated" };
   },
-  async deleteRig(parent: any, args: any, ctx: ExtraContext) {
+  async deleteRig(parent: unknown, args: any, ctx: ExtraContext) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");
@@ -876,7 +943,7 @@ const accounts = {
 
     return { message: "Rig image deleted" };
   },
-  async updateVehicle(parent: any, args: any, ctx: ExtraContext) {
+  async updateVehicle(parent: unknown, args: any, ctx: ExtraContext) {
     // Logged in?
     if (!ctx?.user?.id) {
       throw new Error("User must be logged in");

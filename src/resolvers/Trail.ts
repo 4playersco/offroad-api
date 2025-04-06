@@ -1,6 +1,5 @@
+import { TrailDifficulty } from "@/types/enums";
 import { monthInMs } from "../constants";
-import { TrailDifficulty } from "@/types/main";
-import { ExtraContext } from "@/server/types";
 
 const Trail = {
   // Pattern borrowed from playbook:

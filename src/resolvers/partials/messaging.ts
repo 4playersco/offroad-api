@@ -1,13 +1,12 @@
 import uniq from "lodash/uniq";
-import { sendTransactionalEmail } from "@/server/lib";
-import { emailGroups } from "@/server/constants";
-import { hasRole, hasAccountType, hasAccountStatus } from "@/server/lib";
-import { Title, AccountStatus, AccountType, Role } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+import { sendTransactionalEmail } from "@/lib";
+import { emailGroups } from "@/constants";
+import { hasRole, hasAccountType, hasAccountStatus } from "@/lib";
+import { Title, AccountStatus, AccountType, Role } from "@/types/enums";
 
 const messaging = {
   queries: {
-    async getMessageRecipients(parent: any, args: any, ctx: ExtraContext) {
+    async getMessageRecipients(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -53,7 +52,7 @@ const messaging = {
     },
   },
   mutations: {
-    async sendMessage(parent: any, args: any, ctx: ExtraContext) {
+    async sendMessage(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");

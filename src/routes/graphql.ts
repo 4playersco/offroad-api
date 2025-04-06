@@ -3,13 +3,12 @@ import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { readFileSync } from "fs";
 import { NextRequest, NextResponse } from "next/server";
 
-import * as resolvers from "@/server/resolvers";
-import * as loaders from "@/server/loaders";
-import { DateTime } from "@/server/resolvers/partials/custom";
-import { ExtraContext } from "@/server/types";
+import * as resolvers from "@/resolvers";
+import * as loaders from "@/loaders";
+import { DateTime } from "@/resolvers/partials/custom";
 
 import db from "@/db/client";
-import { getLoggedInUser } from "@/server/data";
+import { getLoggedInUser } from "@/data";
 import { NextApiRequest } from "next";
 
 // Note: this uses a path relative to the project's root directory
@@ -35,5 +34,5 @@ export default startServerAndCreateNextHandler<NextApiRequest, ExtraContext>(
       loaders,
       user: await getLoggedInUser(req),
     }),
-  }
+  },
 );

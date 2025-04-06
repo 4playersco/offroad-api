@@ -1,5 +1,5 @@
 import { RawUser } from "../types/data";
-import { EmailInfo, EmailUser, EventDetails, User } from "@/server/types";
+import { EmailInfo, EmailUser, EventDetails, User } from "@/types/server";
 
 const isStaging =
   process.env.STAGING_ENV && process.env.STAGING_ENV === "staging";
@@ -256,7 +256,7 @@ export const getRunReminderEmail = (
   firstName: string,
   lastName: string,
   eventDetails: EventDetails,
-  urlBase: string
+  urlBase: string,
 ) => ({
   to: getUserAddress(firstName, lastName, email),
   from: noReplyAddress,
@@ -300,7 +300,7 @@ export const getReportReminderEmail = (
   firstName: string,
   lastName: string,
   eventDetails: EventDetails,
-  urlBase?: string
+  urlBase?: string,
 ) => ({
   to: getUserAddress(firstName, lastName, email),
   from: noReplyAddress,
@@ -316,8 +316,8 @@ export const getReportReminderEmail = (
 
     Please submit a run report at your earliest convenience:
     ${urlBase || process.env.FRONTEND_URL}/event/${
-    eventDetails.id
-  }/submit-report
+      eventDetails.id
+    }/submit-report
   `,
   html: `
     <p>${firstName},</p>
@@ -330,8 +330,8 @@ export const getReportReminderEmail = (
     </p>
     
     <p>Please <a href="${urlBase || process.env.FRONTEND_URL}/event/${
-    eventDetails.id
-  }/submit-report">submit a run report</a> at your earliest convenience.</p>
+      eventDetails.id
+    }/submit-report">submit a run report</a> at your earliest convenience.</p>
   `,
 });
 
@@ -340,14 +340,14 @@ export const getNotifyUserOfRestrictedStatusEmail = (
   firstName: string,
   lastName: string,
   events: EventDetails[],
-  max: number
+  max: number,
 ) => {
   const count = events.length;
   const eventsMapText = events
     .map(
       (event) => `
     - ${event.title}
-    `
+    `,
     )
     .join("");
 
@@ -379,7 +379,7 @@ export const getNotifyUserOfRestrictedStatusEmail = (
             (event) =>
               `<li>
               <a href="${process.env.FRONTEND_URL}/event/${event.id}">${event.title}</a>
-            </li>`
+            </li>`,
           )
           .join("")}
       </ul>
@@ -396,14 +396,14 @@ export const getNotifyUserOfRestrictedStatusEmail = (
 
 export const getNotifyBoardOfRestrictedGuestsEmail = (
   users: EmailUser[],
-  max: number
+  max: number,
 ) => {
   const usersMapText = users.map((user) => {
     const eventsMap = Object.values(user.events || {})
       .map(
         (event) => `
         - ${event.title}
-      `
+      `,
       )
       .join("");
 
@@ -442,14 +442,14 @@ export const getNotifyBoardOfRestrictedGuestsEmail = (
                 ${Object.values(user.events)
                   .map(
                     (
-                      event
+                      event,
                     ) => `<li><a href="${process.env.FRONTEND_URL}/event/${event.id}">
                     ${event.title}
-                  </a></li>`
+                  </a></li>`,
                   )
                   .join("")}
               </ul>
-            </li>`
+            </li>`,
           )
           .join("")}
       </ul>
@@ -466,7 +466,7 @@ export const getNotifyBoardOfRestrictedGuestsEmail = (
 export const getNotifyUserOfDelinquentStatusEmail = (
   email: string,
   firstName: string,
-  lastName: string
+  lastName: string,
 ) => {
   return {
     to: getUserAddress(firstName, lastName, email),
@@ -543,7 +543,7 @@ export const getNotifyBoardOfDelinquentsEmail = (users: User[]) => {
             (user) =>
               `<li>
               <a href="mailto:${user.email}">${user.firstName} ${user.lastName}</a>
-            </li>`
+            </li>`,
           )
           .join("")}
       </ul>
@@ -599,7 +599,7 @@ export const getNotifyBoardOfInactiveMembersEmail = (users: RawUser[]) => {
             (user) =>
               `<li>
               <a href="mailto:${user.email}">${user.first_name} ${user.last_name}</a>
-            </li>`
+            </li>`,
           )
           .join("")}
       </ul>
@@ -619,7 +619,7 @@ export const getNotifyBoardOfInactiveMembersEmail = (users: RawUser[]) => {
 export const getNotifyUserOfPastDueStatusEmail = (
   email: string,
   firstName: string,
-  lastName: string
+  lastName: string,
 ) => {
   return {
     to: getUserAddress(firstName, lastName, email),
@@ -677,7 +677,7 @@ export const getNotifyUserOfPastDueStatusEmail = (
 export const getRemindUserOfPastDueStatusEmail = (
   email: string,
   firstName: string,
-  lastName: string
+  lastName: string,
 ) => {
   return {
     to: getUserAddress(firstName, lastName, email),
@@ -736,7 +736,7 @@ export const getNotifyUserOfRestrictedResetEmail = (
   email: string,
   firstName: string,
   lastName: string,
-  max: number
+  max: number,
 ) => {
   return {
     to: getUserAddress(firstName, lastName, email),
@@ -772,7 +772,7 @@ export const getNotifyUserOfRestrictedResetEmail = (
 
 export const getNotifyBoardOfRestrictedResetEmail = (
   users: User[],
-  max: number
+  max: number,
 ) => {
   const usersMapText = users.map((user) => {
     return `
@@ -809,7 +809,7 @@ export const getNotifyBoardOfRestrictedResetEmail = (
             (user) =>
               `<li>
               <a href="mailto:${user.email}">${user.firstName} ${user.lastName}</a>
-            </li>`
+            </li>`,
           )
           .join("")}
       </ul>

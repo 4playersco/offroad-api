@@ -14,3 +14,4 @@ export { default as getTransactionalTemplate } from "./get-transactional-templat
 export * from "./mail-templates";
 export { default as sendTransactionalEmail } from "./send-transactional-mail";
 export { default as stripe } from "./stripe";
+export { default as isDev } from "./isDev";

@@ -3,14 +3,14 @@ import {
   hasAccountStatus,
   hasAccountType,
   convertKeysToSnakeCase,
-} from "@/server/lib";
-import { AccountStatus, AccountType, Role } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+} from "@/lib";
+import { AccountStatus, AccountType, Role } from "@/types/enums";
+
 import cuid from "@bugsnag/cuid";
 
 const trails = {
   queries: {
-    getTrails(parent: any, args: any, ctx: ExtraContext) {
+    getTrails(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -25,7 +25,7 @@ const trails = {
       // If they do, query all the trails
       return ctx.db.select("*").from("trail");
     },
-    getTrail(parent: any, args: any, ctx: ExtraContext) {
+    getTrail(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -49,7 +49,7 @@ const trails = {
     },
   },
   mutations: {
-    async createTrail(parent: any, args: any, ctx: ExtraContext) {
+    async createTrail(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -66,7 +66,7 @@ const trails = {
 
       const { trail } = args;
       const { featuredImage, newFeaturedImage, ...filteredTrail } = trail;
-      let data = { ...filteredTrail };
+      const data = { ...filteredTrail };
 
       // Is a new featured image assigned?
       if (newFeaturedImage) {
@@ -86,7 +86,7 @@ const trails = {
 
       return { message: "Your trail has been created" };
     },
-    async updateTrail(parent: any, args: any, ctx: ExtraContext) {
+    async updateTrail(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -110,7 +110,7 @@ const trails = {
         .from("trail")
         .where({ id: trailId });
 
-      let data = { ...filteredTrail };
+      const data = { ...filteredTrail };
 
       if (newFeaturedImage) {
         const newImageId = cuid();
@@ -137,7 +137,7 @@ const trails = {
 
       return { message: "Your trail has been updated" };
     },
-    async updateTrailImage(parent: any, args: any, ctx: ExtraContext) {
+    async updateTrailImage(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");

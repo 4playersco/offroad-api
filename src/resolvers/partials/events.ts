@@ -1,34 +1,45 @@
-import {
-  hasRole,
-  hasAccountStatus,
-  convertKeysToSnakeCase,
-} from "@/server/lib";
-import { defaultPaginationSize } from "@/server/constants";
+import cuid from "@bugsnag/cuid";
+
+import { hasRole, hasAccountStatus, convertKeysToSnakeCase } from "@/lib";
+import { defaultPaginationSize } from "@/constants";
 import {
   AccountStatus,
   AccountType,
   Role,
-  EventRsvp,
+  RsvpStatus,
   EventType,
-} from "@/types/main";
-import { ExtraContext } from "@/server/types";
-import cuid from "@bugsnag/cuid";
+  type QueryGetUpcomingEventsArgs,
+  type QueryGetUserEventsArgs,
+  type QueryGetPastEventsArgs,
+  type QueryGetEventArgs,
+  type MutationCreateEventArgs,
+  type MutationDeleteEventArgs,
+  type MutationUpdateEventArgs,
+  type MutationSetRsvpArgs,
+} from "@/generated/graphql";
+
+import type { ExtraContext } from "@/types/server";
+import type { EventModel } from "@/types/database";
 
 const events = {
   queries: {
-    async getUpcomingEvents(parent: any, args: any, ctx: ExtraContext) {
+    async getUpcomingEvents(
+      _parent: unknown,
+      args: QueryGetUpcomingEventsArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const { count, page } = args;
+
+      // @TODO wrap in try/catch
+      // @TODO wrap in adapters (db > graphql)
 
       // No page? Show all
       if (!page && !count) {
@@ -49,39 +60,41 @@ const events = {
         .limit(count || defaultPaginationSize)
         .offset(skip <= 0 ? 0 : skip);
     },
-    async upcomingEventsCount(parent: any, args: any, ctx: ExtraContext) {
+    async upcomingEventsCount(
+      _parent: unknown,
+      _args: unknown,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
-      const results = await ctx.db
+      const results: EventModel[] = await ctx.db
         .count("id")
         .from("event")
         .where("start_time", ">=", new Date().toISOString());
 
       return { count: results };
     },
-    async getUserEvents(parent: any, args: any, ctx: ExtraContext) {
+    async getUserEvents(
+      _parent: unknown,
+      args: QueryGetUserEventsArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper role?
-      hasRole(ctx.user, [Role.ADMIN, Role.OFFICER, Role.RUN_MASTER]);
+      hasRole(ctx.user, [Role.Admin, Role.Officer, Role.RunMaster]);
 
       // Requesting user has proper account type?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const id =
         args.username === "self"
@@ -113,17 +126,18 @@ const events = {
         })
         .orderBy("start_time DESC");
     },
-    async getPastEvents(parent: any, args: any, ctx: ExtraContext) {
+    async getPastEvents(
+      _parent: unknown,
+      args: QueryGetPastEventsArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const { count, page } = args;
 
@@ -146,17 +160,14 @@ const events = {
         .limit(count || defaultPaginationSize)
         .offset(skip <= 0 ? 0 : skip);
     },
-    async pastEventsCount(parent: any, args: any, ctx: ExtraContext) {
+    async pastEventsCount(_parent: unknown, _args: unknown, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const results = await ctx.db
         .count("id")
@@ -165,17 +176,18 @@ const events = {
 
       return { count: results };
     },
-    async getEvent(parent: any, args: any, ctx: ExtraContext) {
+    async getEvent(
+      _parent: unknown,
+      args: QueryGetEventArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const result = await ctx.db
         .select("*")
@@ -186,24 +198,21 @@ const events = {
         throw new Error("Event cannot be found");
       }
 
-      if (result[0].membersOnly && ctx.user.accountType === AccountType.GUEST) {
+      if (result[0].membersOnly && ctx.user.accountType === AccountType.Guest) {
         throw new Error("You cheeky bastard! Nice try.");
         // Email webmaster
       }
 
       return result;
     },
-    async getNextEvent(parent: any, args: any, ctx: ExtraContext) {
+    async getNextEvent(_parent: unknown, _args: unknown, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
       }
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const results = await ctx.db
         .select("*")
@@ -214,7 +223,7 @@ const events = {
 
       return results.length > 0 ? results[0] : null;
     },
-    // async getMyNextEvent(parent: any, args: any, ctx: ExtraContext) {
+    // async getMyNextEvent(parent: unknown, args: any, ctx: ExtraContext) {
     //   // Logged in?
     //   if (!ctx?.user?.id) {
     //     throw new Error("You must be logged in");
@@ -251,20 +260,21 @@ const events = {
     // },
   },
   mutations: {
-    async createEvent(parent: any, args: any, ctx: ExtraContext) {
+    async createEvent(
+      _parent: unknown,
+      args: MutationCreateEventArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
       }
 
       // Have proper roles to do this?
-      hasRole(ctx.user, [Role.ADMIN, Role.OFFICER, Role.RUN_MASTER]);
+      hasRole(ctx.user, [Role.Admin, Role.Officer, Role.RunMaster]);
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const { event } = args;
 
@@ -283,7 +293,11 @@ const events = {
           type: event.type,
           title: event.title,
           description: event.description || "",
-          start_time: new Date(event.startTime).toISOString(),
+          start_time:
+            typeof event.startTime === "string" ||
+            typeof event.startTime === "number"
+              ? new Date(event.startTime).toISOString()
+              : null,
           end_time: new Date(event.endTime).toISOString(),
           address: event.address || "",
           trail_difficulty: event.trailDifficulty || "",
@@ -306,7 +320,7 @@ const events = {
           member: host.id,
           event: eventId,
           vehicle: host.vehicle,
-          status: EventRsvp.GOING,
+          status: RsvpStatus.Going,
         }),
         ctx.db("_members_rsvp").insert({
           a: host.id,
@@ -316,20 +330,21 @@ const events = {
 
       return { message: "Your event has been created" };
     },
-    async deleteEvent(parent: any, args: any, ctx: any) {
+    async deleteEvent(
+      _parent: unknown,
+      args: MutationDeleteEventArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
       }
 
       // Have proper roles to do this?
-      hasRole(ctx.user, [Role.ADMIN, Role.OFFICER, Role.RUN_MASTER]);
+      hasRole(ctx.user, [Role.Admin, Role.Officer, Role.RunMaster]);
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const { id: eventId } = args;
 
@@ -370,20 +385,21 @@ const events = {
         throw new Error("Could not delete event");
       }
     },
-    async updateEvent(parent: any, args: any, ctx: ExtraContext) {
+    async updateEvent(
+      _parent: unknown,
+      args: MutationUpdateEventArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
       }
 
       // Have proper roles to do this?
-      hasRole(ctx.user, [Role.ADMIN, Role.OFFICER, Role.RUN_LEADER]);
+      hasRole(ctx.user, [Role.Admin, Role.Officer, Role.RunLeader]);
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const { event, id: eventId } = args;
 
@@ -415,7 +431,11 @@ const events = {
         title: event.title,
         type: event.type,
         description: event.description || "",
-        start_time: new Date(event.startTime).toISOString(),
+        start_time:
+          typeof event.startTime === "string" ||
+          typeof event.startTime === "number"
+            ? new Date(event.startTime).toISOString()
+            : null,
         end_time: new Date(event.endTime).toISOString(),
         address: event.address || "",
         trail_difficulty: event.trailDifficulty || "",
@@ -440,7 +460,7 @@ const events = {
             id: rsvpId,
             member: newHost.id,
             event: eventId,
-            status: EventRsvp.GOING,
+            status: RsvpStatus.Going,
           }),
           ctx.db("_members_rsvp").insert({
             a: newHost.id,
@@ -476,7 +496,11 @@ const events = {
 
       return { message: "Your event has been updated" };
     },
-    async setRSVP(parent: any, args: any, ctx: ExtraContext) {
+    async setRSVP(
+      _parent: unknown,
+      args: MutationSetRsvpArgs,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -485,14 +509,11 @@ const events = {
       const { rsvp } = args;
 
       // Requesting user has proper account status?
-      hasAccountStatus(ctx.user, [
-        AccountStatus.ACTIVE,
-        AccountStatus.PAST_DUE,
-      ]);
+      hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       // Requesting user has proper role?
       if (ctx?.user?.id !== rsvp.userId) {
-        hasRole(ctx.user, [Role.ADMIN, Role.OFFICER]);
+        hasRole(ctx.user, [Role.Admin, Role.Officer]);
       }
 
       // Query the current user
@@ -523,8 +544,8 @@ const events = {
       }
 
       if (
-        currentUser.accountStatus !== AccountStatus.ACTIVE &&
-        currentUser.accountStatus !== AccountStatus.PAST_DUE
+        currentUser.accountStatus !== AccountStatus.Active &&
+        currentUser.accountStatus !== AccountStatus.PastDue
       ) {
         throw new Error("Guest does not have permission");
       }
@@ -535,14 +556,14 @@ const events = {
           .from("rsvp")
           .innerJoin("event", "event.id", "rsvp.event")
           .where({ "rsvp.member": rsvp.userId })
-          .andWhere({ "rsvp.status": EventRsvp.GOING })
-          .andWhere({ "event.type": EventType.RUN })
+          .andWhere({ "rsvp.status": RsvpStatus.Going })
+          .andWhere({ "event.type": EventType.Run })
           .andWhere("rsvp.start_time", ">=", new Date().toISOString())
           .limit(4);
 
         if (
           currentGuestRsvps[0].length >= 3 &&
-          rsvp.status === EventRsvp.GOING
+          rsvp.status === RsvpStatus.Going
         ) {
           throw new Error(
             "Guests can only attend 3 runs. Please become a member to attend more.",
@@ -552,7 +573,7 @@ const events = {
 
       // Has this user already RSVPd?
       const userRSVP = currentUserRsvps.find(
-        (eventRSVP: any) => eventRSVP.id === rsvp.eventId,
+        (RsvpStatus: any) => RsvpStatus.id === rsvp.eventId,
       );
 
       // console.log("userRSVP", userRSVP);

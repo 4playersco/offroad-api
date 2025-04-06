@@ -1,9 +1,10 @@
-import type { User } from "@/server/types";
+import { User } from "@/generated/graphql";
+import type { ContextUser } from "@/types/server";
 
 export const hasRole = function hasRole(
-  user: Pick<User, "role">,
+  user: Pick<ContextUser, "role">,
   rolesNeeded: string[],
-  shouldThrow = true
+  shouldThrow = true,
 ) {
   const matchedRoles = rolesNeeded.includes(user.role);
 
@@ -19,9 +20,9 @@ export const hasRole = function hasRole(
 };
 
 export const hasAccountStatus = function hasAccountStatus(
-  user: Pick<User, "accountStatus">,
+  user: Pick<ContextUser, "accountStatus">,
   statusNeeded: string[],
-  shouldThrow = true
+  shouldThrow = true,
 ) {
   const matchedStatus = statusNeeded.includes(user.accountStatus);
 
@@ -37,9 +38,9 @@ export const hasAccountStatus = function hasAccountStatus(
 };
 
 export const hasAccountType = function hasAccountType(
-  user: Pick<User, "accountType">,
+  user: Pick<ContextUser, "accountType">,
   typeNeeded: string[],
-  shouldThrow = true
+  shouldThrow = true,
 ) {
   const matchedType = typeNeeded.includes(user.accountType);
 
@@ -58,7 +59,7 @@ export const hasRoleOrIsSelf = function hasRoleOrIsSelf(
   currentUser: User,
   rolesNeeded: string[],
   idInQuestion: string,
-  shouldThrow = true
+  shouldThrow = true,
 ) {
   const result =
     hasRole(currentUser, rolesNeeded, false) ||
@@ -70,9 +71,9 @@ export const hasRoleOrIsSelf = function hasRoleOrIsSelf(
 };
 
 export const isSelf = function isSelf(
-  currentUser: User,
+  currentUser: ContextUser,
   idInQuestion: string,
-  shouldThrow = true
+  shouldThrow = true,
 ) {
   const result = currentUser.id === idInQuestion;
 

@@ -1,6 +1,4 @@
 import { BaseContext } from "@apollo/server";
-import type { Knex } from "knex";
-import type { NextFunction, Request, Response } from "express";
 
 declare global {
   namespace Express {
@@ -44,9 +42,10 @@ type ContextUser = Pick<
   | "role"
 >;
 
-interface ExtraContext extends BaseContext {
+export interface ExtraContext extends BaseContext {
   db: Knex;
   loaders: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  user: ContextUser;
 }
 
 interface EmailUser extends User {
@@ -56,21 +55,6 @@ interface EmailUser extends User {
     lastName: string;
     email: string;
   };
-}
-
-export enum Month {
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
 }
 
 type EmailInfo = {

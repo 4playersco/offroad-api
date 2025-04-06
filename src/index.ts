@@ -36,7 +36,7 @@
 // const app = express();
 
 // if (process.env.NODE_ENV !== "production") {
-//   app.get("/backblaze", backblaze.getDocs);
+//   app.get("@/backblaze", backblaze.getDocs);
 // }
 
 // function requireHTTPS(req, res, next) {
@@ -53,8 +53,8 @@
 
 // app.use(requireHTTPS);
 
-// app.get("/calendar/upcoming/:count", calendar.getUpcoming);
-// app.get("/calendar/ical", calendar.getIcal);
+// app.get("@/calendar/upcoming/:count", calendar.getUpcoming);
+// app.get("@/calendar/ical", calendar.getIcal);
 
 // app.use(cors(corsOptions));
 // app.use(cookieParser());

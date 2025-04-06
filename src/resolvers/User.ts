@@ -1,5 +1,4 @@
-import { EventRsvp, EventType } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+import { EventRsvp, EventType } from "@/types/enums";
 
 const User = {
   runsAttendedCount(user: any, args: any, ctx: ExtraContext) {

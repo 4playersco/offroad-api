@@ -1,6 +1,11 @@
 import type { Knex } from "knex";
+import dotenv from "dotenv";
 
-const defaultOptions = {
+if (process.env.KNEX_ENV === "true") {
+  dotenv.config({ path: ".env" });
+}
+
+export const defaultOptions = {
   client: "mysql2",
   connection: {
     host: process.env.MYSQL_HOST,

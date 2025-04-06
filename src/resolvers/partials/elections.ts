@@ -4,14 +4,14 @@ import {
   hasAccountStatus,
   convertKeysToCamelCase,
   convertKeysToSnakeCase,
-} from "@/server/lib";
-import { AccountStatus, AccountType, Role } from "@/types/main";
-import { ExtraContext } from "@/server/types";
+} from "@/lib";
+import { AccountStatus, AccountType, Role } from "@/types/enums";
+
 import cuid from "@bugsnag/cuid";
 
 const elections = {
   queries: {
-    async electionCandidates(parent: any, args: any, ctx: ExtraContext) {
+    async electionCandidates(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -37,7 +37,7 @@ const elections = {
           });
         });
     },
-    getActiveElections(parent: any, args: any, ctx: ExtraContext) {
+    getActiveElections(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -61,7 +61,11 @@ const elections = {
         .andWhere("end_time", ">", now)
         .orderBy("end_time ASC");
     },
-    getActiveElectionsWithResults(parent: any, args: any, ctx: ExtraContext) {
+    getActiveElectionsWithResults(
+      parent: unknown,
+      args: any,
+      ctx: ExtraContext,
+    ) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -86,7 +90,7 @@ const elections = {
         .andWhere("end_time", ">", now)
         .orderBy("end_time ASC");
     },
-    getElection(parent: any, args: any, ctx: ExtraContext) {
+    getElection(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -103,7 +107,7 @@ const elections = {
 
       return ctx.db.select("*").from("election").where({ id: args.id });
     },
-    getUserVote(parent: any, args: any, ctx: ExtraContext) {
+    getUserVote(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("You must be logged in");
@@ -127,7 +131,7 @@ const elections = {
     },
   },
   mutations: {
-    async submitElection(parent: any, args: any, ctx: ExtraContext) {
+    async submitElection(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");
@@ -167,7 +171,7 @@ const elections = {
 
       return convertKeysToCamelCase(results);
     },
-    async submitVote(parent: any, args: any, ctx: ExtraContext) {
+    async submitVote(parent: unknown, args: any, ctx: ExtraContext) {
       // Logged in?
       if (!ctx?.user?.id) {
         throw new Error("User must be logged in");

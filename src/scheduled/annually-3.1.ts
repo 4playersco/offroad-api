@@ -8,8 +8,8 @@ import db from "@/db/client";
 import {
   getRemindUserOfPastDueStatusEmail,
   sendTransactionalEmail,
-} from "@/server/lib";
-import { AccountStatus, AccountType } from "@/types/main";
+} from "@/lib";
+import { AccountStatus, AccountType } from "@/types/server";
 
 const mar1 = async () => {
   console.log("It is March 1st - game time!");

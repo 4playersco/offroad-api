@@ -1,12 +1,12 @@
 import {
   DEFAULT_FULL_MEMBER_DUES_AMOUNT,
   DEFAULT_ASSOCIATE_MEMBER_DUES_AMOUNT,
-} from "@/ui/constants";
+} from "@/constants";
 
 export const getFullMemberDuesAmount = () => {
   return parseInt(
     process.env.FULL_MEMBERSHIP_DUES ?? String(DEFAULT_FULL_MEMBER_DUES_AMOUNT),
-    10
+    10,
   );
 };
 
@@ -14,14 +14,14 @@ export const getAssociateMemberDuesAmount = () => {
   return parseInt(
     process.env.ASSOCIATE_MEMBERSHIP_DUES ??
       String(DEFAULT_ASSOCIATE_MEMBER_DUES_AMOUNT),
-    10
+    10,
   );
 };
 
 export const getDuesAmount = (
   fullMemberCount = 1,
   associateMemberCount = 0,
-  includeFees = false
+  includeFees = false,
 ) => {
   // Current: Stripe
   // 2.9% + $0.30 per transaction
@@ -29,14 +29,14 @@ export const getDuesAmount = (
     parseInt(
       process.env.FULL_MEMBERSHIP_DUES ??
         String(DEFAULT_FULL_MEMBER_DUES_AMOUNT),
-      10
+      10,
     ) * fullMemberCount;
 
   const associateMemberDues =
     parseInt(
       process.env.ASSOCIATE_MEMBERSHIP_DUES ??
         String(DEFAULT_ASSOCIATE_MEMBER_DUES_AMOUNT),
-      10
+      10,
     ) * associateMemberCount;
 
   const dues = fullMemberDues + associateMemberDues;

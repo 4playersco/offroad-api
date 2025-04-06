@@ -14,10 +14,10 @@ import {
   getReportReminderEmail,
   getNotifyUserOfRestrictedStatusEmail,
   getNotifyBoardOfRestrictedGuestsEmail,
-} from "@/server/lib";
-import { guestMaxRuns, datePrintFormat, timezone } from "@/server/constants";
-import { AccountStatus, EventRsvp, EventType } from "@/types/main";
-import { EventDetails } from "@/server/types";
+} from "@/lib";
+import { guestMaxRuns, datePrintFormat, timezone } from "@/constants";
+import { AccountStatus, EventRsvp, EventType } from "@/types/server";
+import { EventDetails } from "@/types/server";
 
 const urlBase = "https://members.4-playersofcolorado.org";
 

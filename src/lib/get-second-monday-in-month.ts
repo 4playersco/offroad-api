@@ -1,5 +1,5 @@
 import { addDays, getDay } from "date-fns";
-import { Month } from "../types/main";
+import { Month } from "../types/server";
 
 const getSecondMondayInMonth = (month: Month, date: Date) => {
   const tempDate = date;

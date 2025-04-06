@@ -1,5 +1,5 @@
 import { RawEventDetails } from "../types/data";
-import { EventDetails } from "../types/main";
+import { EventDetails } from "../types/server";
 
 const eventsFromDb = (
   dbEvents: RawEventDetails[] | undefined,

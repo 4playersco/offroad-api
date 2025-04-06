@@ -1,14 +1,32 @@
-import { MembershipMessageCode, AccountStatus } from "@/types/main";
-import { type ContextUser } from "@/server/types";
+import { MembershipMessageCode, AccountStatus } from "@/types/enums";
+import { type ContextUser } from "@/types/server";
 import cuid from "@bugsnag/cuid";
 //   GUEST_RESTRICTED           AUTO/TRANSACTIONAL
+
+interface Log {
+  id: string;
+  time: Date;
+  message: string;
+  user: string;
+  logger?: string;
+}
+
+interface MembershipLog extends Log {
+  message_code: MembershipMessageCode;
+}
+
+interface ActivityLog extends Log {
+  message_code: ActivityLog;
+}
+
+type CombinedLog = (MembershipLog | ActivityLog)[];
 
 export const duesPaid = (
   amt: string,
   user: string,
   logger?: ContextUser,
   payerName?: string,
-) => {
+): MembershipLog => {
   const wasLoggedByAdmin = !!logger;
   const didPayForAnother = !!payerName;
   const id = cuid();
