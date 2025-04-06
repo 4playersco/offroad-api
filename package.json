@@ -21,7 +21,6 @@
     "db:clean": "docker compose -f docker-compose.dev.yml down --volumes",
     "db:create-migration": "KNEX_ENV=true tsx ./node_modules/.bin/knex migrate:make",
     "db:create-seed": "KNEX_ENV=true tsx ./node_modules/.bin/knex seed:make",
-    "db:gen-old": "KNEX_ENV=true tsx ./src/db/generate-types.ts",
     "db:gen": "kysely-codegen",
     "gql:gen": "graphql-codegen --config codegen.ts",
     "generate-pw": "tsx -P ./scripts/tsconfig.json ./scripts/passwords/generate-hashed-password.ts",
