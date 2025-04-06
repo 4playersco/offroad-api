@@ -18,6 +18,8 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "esModuleInterop": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    // Kysely
+    "strict": true
   }
 }
