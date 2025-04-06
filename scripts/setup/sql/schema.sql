@@ -445,14 +445,14 @@ CREATE TABLE `activity_log_item` (
 -- Table structure for table `_members_rsvp`
 --
 
--- CREATE TABLE `_members_rsvp` (
---   `a` CHAR(25) NOT NULL,
---   `b` CHAR(25) NOT NULL,
---   UNIQUE KEY `_members_rsvp_a_b_unique` (`a`,`b`),
---   KEY `_members_rsvp_b` (`b`),
---   CONSTRAINT `_members_rsvp_a_fkey` FOREIGN KEY (`a`) REFERENCES `rsvp` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
---   CONSTRAINT `_members_rsvp_b_fkey` FOREIGN KEY (`b`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
--- ) CHARSET=utf8mb4 ENGINE=InnoDB;
+CREATE TABLE `_members_rsvp` (
+  `a` CHAR(25) NOT NULL,
+  `b` CHAR(25) NOT NULL,
+  UNIQUE KEY `_members_rsvp_a_b_unique` (`a`,`b`),
+  KEY `_members_rsvp_b` (`b`),
+  CONSTRAINT `_members_rsvp_a_fkey` FOREIGN KEY (`a`) REFERENCES `rsvp` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `_members_rsvp_b_fkey` FOREIGN KEY (`b`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) CHARSET=utf8mb4 ENGINE=InnoDB;
 
 --
 -- Table structure for table `_run_condition`

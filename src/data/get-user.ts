@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import db from "@/db/client";
-import { userFromDb } from "@/adapters";
+// import { userFromDb } from "@/adapters";
 
 // See info about the user if logged in
 async function getUserInfo(req: Request, res: Response, next: NextFunction) {
@@ -10,7 +10,8 @@ async function getUserInfo(req: Request, res: Response, next: NextFunction) {
   }
 
   const user = await db
-    .select<RawUser>(
+    .selectFrom("user")
+    .select([
       "id",
       "firstName",
       "lastName",
@@ -19,12 +20,11 @@ async function getUserInfo(req: Request, res: Response, next: NextFunction) {
       "role",
       "email",
       "username",
-    )
-    .from("user")
-    .where(`id = ${req.userId}`)
-    .limit(1);
+    ])
+    .where("id", "=", `${req.userId}`)
+    .executeTakeFirst();
 
-  req.user = userFromDb(user);
+  req.user = user;
 
   next();
 }

@@ -1,4 +1,6 @@
-import { BaseContext } from "@apollo/server";
+import type { BaseContext } from "@apollo/server";
+import type { Kysely } from "kysely";
+import type { DB } from "./db";
 
 declare global {
   namespace Express {
@@ -43,7 +45,7 @@ type ContextUser = Pick<
 >;
 
 export interface ExtraContext extends BaseContext {
-  db: Knex;
+  db: Kysely<DB>;
   loaders: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   user: ContextUser;
 }

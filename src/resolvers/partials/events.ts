@@ -19,7 +19,6 @@ import {
 } from "@/generated/graphql";
 
 import type { ExtraContext } from "@/types/server";
-import type { EventModel } from "@/types/database";
 
 const events = {
   queries: {
@@ -39,26 +38,27 @@ const events = {
       const { count, page } = args;
 
       // @TODO wrap in try/catch
-      // @TODO wrap in adapters (db > graphql)
 
       // No page? Show all
       if (!page && !count) {
         return ctx.db
-          .select("*")
-          .from("event")
-          .where("start_time", ">=", new Date().toISOString())
-          .orderBy("start_time ASC");
+          .selectFrom("event")
+          .selectAll()
+          .where("startTime", ">=", new Date())
+          .orderBy("startTime", "asc")
+          .execute();
       }
 
-      const skip = (page - 1) * defaultPaginationSize;
+      const skip = (page ? page - 1 : 1) * defaultPaginationSize;
 
       return ctx.db
-        .select("*")
-        .from("event")
-        .where("start_time", ">=", new Date().toISOString())
-        .orderBy("start_time ASC")
+        .selectFrom("event")
+        .selectAll()
+        .where("startTime", ">=", new Date())
+        .orderBy("startTime", "asc")
         .limit(count || defaultPaginationSize)
-        .offset(skip <= 0 ? 0 : skip);
+        .offset(skip <= 0 ? 0 : skip)
+        .execute();
     },
     async upcomingEventsCount(
       _parent: unknown,
@@ -73,12 +73,11 @@ const events = {
       // Requesting user has proper account status?
       hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
-      const results: EventModel[] = await ctx.db
-        .count("id")
-        .from("event")
-        .where("start_time", ">=", new Date().toISOString());
-
-      return { count: results };
+      return ctx.db
+        .selectFrom("event")
+        .select((eb) => eb.fn.count<number>("id").as("count"))
+        .where("startTime", ">=", new Date())
+        .executeTakeFirstOrThrow();
     },
     async getUserEvents(
       _parent: unknown,
@@ -100,31 +99,25 @@ const events = {
         args.username === "self"
           ? ctx?.user?.id
           : await ctx.db
+              .selectFrom("user")
               .select("id")
-              .from("user")
-              .where({ username: args.username });
+              .where("username", "=", args.username)
+              .executeTakeFirstOrThrow();
 
       return ctx.db
-        .select("event.*")
-        .from("event")
+        .selectFrom("event")
+        .selectAll("event")
         .innerJoin("rsvp", "rsvp.event", "event.id")
-        .where((qb: typeof ctx.db) => {
-          // Start time >= now, rsvp status is GOING
-          qb.where("start_time", ">=", new Date().toISOString()).andWhere(
-            "rsvp.status",
-            "=",
-            "GOING",
-          );
-
-          // Filter by event type if needed
-          if (args.eventType) {
-            qb.andWhere("event.type", "=", args.eventType);
-          }
-
-          // Determine where to filter by member ID or user ID
-          qb.where({ "rsvp.member": id });
-        })
-        .orderBy("start_time DESC");
+        .where((eb) =>
+          eb.and([
+            eb("startTime", ">=", new Date()),
+            eb("rsvp.status", "=", "GOING"),
+            ...(args.eventType ? [eb("event.type", "=", args.eventType)] : []),
+            eb("rsvp.member", "=", typeof id === "string" ? id : id.id),
+          ]),
+        )
+        .orderBy("startTime", "desc")
+        .execute();
     },
     async getPastEvents(
       _parent: unknown,
@@ -144,21 +137,23 @@ const events = {
       // No page? Show all
       if (!page && !count) {
         return ctx.db
-          .select("*")
-          .from("event")
-          .where("start_time", "<", new Date().toISOString())
-          .orderBy("start_time DESC");
+          .selectFrom("event")
+          .selectAll()
+          .where("startTime", "<", new Date())
+          .orderBy("startTime", "desc")
+          .execute();
       }
 
-      const skip = (page - 1) * defaultPaginationSize;
+      const skip = (page ? page - 1 : 1) * defaultPaginationSize;
 
       return ctx.db
-        .select("*")
-        .from("event")
-        .where("start_time", "<", new Date().toISOString())
-        .orderBy("start_time DESC")
+        .selectFrom("event")
+        .selectAll()
+        .where("startTime", "<", new Date())
+        .orderBy("startTime", "desc")
         .limit(count || defaultPaginationSize)
-        .offset(skip <= 0 ? 0 : skip);
+        .offset(skip <= 0 ? 0 : skip)
+        .execute();
     },
     async pastEventsCount(_parent: unknown, _args: unknown, ctx: ExtraContext) {
       // Logged in?
@@ -169,12 +164,11 @@ const events = {
       // Requesting user has proper account status?
       hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
-      const results = await ctx.db
-        .count("id")
-        .from("event")
-        .where("start_time", "<", new Date().toISOString());
-
-      return { count: results };
+      return ctx.db
+        .selectFrom("event")
+        .select((eb) => eb.fn.count<number>("id").as("count"))
+        .where("startTime", "<", new Date())
+        .executeTakeFirstOrThrow();
     },
     async getEvent(
       _parent: unknown,
@@ -190,9 +184,10 @@ const events = {
       hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
       const result = await ctx.db
-        .select("*")
-        .from("event")
-        .where({ id: args.eventId });
+        .selectFrom("event")
+        .selectAll()
+        .where("id", "=", args.eventId)
+        .execute();
 
       if (!result || !result[0]) {
         throw new Error("Event cannot be found");
@@ -279,53 +274,69 @@ const events = {
       const { event } = args;
 
       const [host] = await ctx.db
-        .select("id, vehicle")
-        .from("user")
-        .where({ email: event.host });
+        .selectFrom("user")
+        .select(["id", "vehicle"])
+        .where("email", "=", event.host)
+        .execute();
 
       // Create event, RSVP
       const eventId = cuid();
       const rsvpId = cuid();
 
       await Promise.all([
-        ctx.db("event").insert({
-          id: eventId,
-          type: event.type,
-          title: event.title,
-          description: event.description || "",
-          start_time:
-            typeof event.startTime === "string" ||
-            typeof event.startTime === "number"
-              ? new Date(event.startTime).toISOString()
-              : null,
-          end_time: new Date(event.endTime).toISOString(),
-          address: event.address || "",
-          trail_difficulty: event.trailDifficulty || "",
-          // trailNotes: event.trailNotes,
-          featured_image: event.featuredImage || null,
-          rally_address: event.rallyAddress || "",
-          members_only: event.membersOnly,
-          max_attendees: event.maxAttendees || -1,
-          max_rigs: event.maxRigs || -1,
-          change_disabled: event.changeDisabled || false,
-          creator: ctx.user.id,
-          host: host.id,
-        }),
-        ctx.db("_event_trail").insert({
-          a: eventId,
-          b: event.trail,
-        }),
-        ctx.db("rsvp").insert({
-          id: rsvpId,
-          member: host.id,
-          event: eventId,
-          vehicle: host.vehicle,
-          status: RsvpStatus.Going,
-        }),
-        ctx.db("_members_rsvp").insert({
-          a: host.id,
-          b: rsvpId,
-        }),
+        ctx.db
+          .insertInto("event")
+          .values({
+            id: eventId,
+            type: event.type,
+            title: event.title,
+            description: event.description || "",
+            startTime:
+              typeof event.startTime === "string" ||
+              typeof event.startTime === "number"
+                ? new Date(event.startTime)
+                : null,
+            endTime: new Date(event.endTime),
+            address: event.address || "",
+            trailDifficulty: event.trailDifficulty || "",
+            // trailNotes: event.trailNotes,
+            featuredImage: event.featuredImage || null,
+            rallyAddress: event.rallyAddress || "",
+            membersOnly: event.membersOnly ? 1 : 0,
+            maxAttendees: event.maxAttendees || -1,
+            maxRigs: event.maxRigs || -1,
+            changeDisabled: event.changeDisabled ? 1 : 0,
+            creator: ctx.user.id,
+            host: host.id,
+          })
+          .execute(),
+        event.trail
+          ? ctx.db
+              .insertInto("_EventTrail")
+              .values({
+                a: eventId,
+                b: event.trail,
+              })
+              .execute()
+          : Promise.resolve(),
+        ctx.db
+          .insertInto("rsvp")
+          .values({
+            id: rsvpId,
+            member: host.id,
+            event: eventId,
+            vehicle: host.vehicle,
+            status: RsvpStatus.Going,
+          })
+          .execute(),
+
+        ctx.db
+          .insertInto("_MembersRsvp")
+          .values({
+            a: host.id,
+            b: rsvpId,
+          })
+          .execute(),
       ]);
 
       return { message: "Your event has been created" };
@@ -349,35 +360,40 @@ const events = {
       const { id: eventId } = args;
 
       const existingEvent = await ctx.db
-        .select("title", "featured_image")
-        .from("event")
-        .where({ id: eventId });
+        .selectFrom("event")
+        .select(["title", "featuredImage"])
+        .where("id", "=", eventId)
+        .executeTakeFirstOrThrow();
 
       const existingRsvps = await ctx.db
+        .selectFrom("rsvp")
         .select("id")
-        .from("rsvp")
-        .where({ event: eventId });
+        .where("event", "=", eventId)
+        .execute();
 
       try {
         // Delete featured image
-        if (existingEvent[0].featuredImage && existingEvent.featured_image) {
-          await ctx
-            .db("cloudinary_image")
-            .where({ id: existingEvent.featured_image })
-            .delete();
+        if (existingEvent.featuredImage) {
+          await ctx.db
+            .deleteFrom("cloudinaryImage")
+            .where("id", "=", existingEvent.featuredImage)
+            .execute();
         }
 
         // Delete _event_trail pivot entry
-        await ctx.db("_event_trail").where({ a: eventId }).delete();
+        await ctx.db
+          .deleteFrom("_EventTrail")
+          .where("a", "=", eventId)
+          .execute();
 
         // Delete rsvps
         if (existingRsvps && existingRsvps.length > 0) {
           const ids = existingRsvps.map(({ id }: { id: string }) => id);
-          await ctx.db("rsvp").whereIn("id", ids).delete();
+          await ctx.db.deleteFrom("rsvp").where("id", "in", ids).execute();
         }
 
         // Delete event
-        await ctx.db("event").where({ id: eventId }).delete();
+        await ctx.db.deleteFrom("event").where("id", "=", eventId).execute();
 
         return { message: `${existingEvent.title} event has been deleted` };
       } catch (e) {
@@ -404,28 +420,29 @@ const events = {
       const { event, id: eventId } = args;
 
       // Get current event for later comparison
-      const [existingEvent] = await ctx.db
-        .select("id", "host", "featured_image")
-        .from("event")
-        .where({ id: eventId })
-        .limit(1);
+      const existingEvent = await ctx.db
+        .selectFrom("event")
+        .select(["id", "host", "featuredImage"])
+        .where("id", "=", eventId)
+        .executeTakeFirstOrThrow();
 
       const existingRsvps = await ctx.db
-        .select("id")
-        .from("rsvp")
-        .where({ event: eventId });
+        .selectFrom("rsvp")
+        .select(["id", "member"])
+        .where("rsvp.event", "=", eventId)
+        .execute();
 
-      const [existingTrail] = await ctx.db
-        .select("id")
-        .from("_event_trail")
-        .where({ a: eventId })
-        .limit(1);
+      const existingTrail = await ctx.db
+        .selectFrom("_EventTrail")
+        .select("b as id")
+        .where("a", "=", eventId)
+        .executeTakeFirst();
 
-      const [newHost] = await ctx.db
+      const newHost = await ctx.db
+        .selectFrom("user")
         .select("id")
-        .from("user")
-        .where({ username: event.host })
-        .limit(1);
+        .where("username", "=", event.host)
+        .executeTakeFirstOrThrow();
 
       const data = {
         title: event.title,
@@ -446,45 +463,66 @@ const events = {
         max_rigs: event.maxRigs,
         change_disabled: event.changeDisabled,
         host: newHost.id,
-        featured_image: event.featuredImage || existingEvent.featured_image,
+        featured_image: event.featuredImage || existingEvent.featuredImage,
       };
 
       // Does host need an RSVP?
       if (
         existingRsvps &&
-        !existingRsvps.find((rsvp: any) => rsvp.member === newHost.id)
+        !existingRsvps.find((rsvp) => rsvp.member === newHost.id)
       ) {
         const rsvpId = cuid();
+
         await Promise.all([
-          ctx.db("rsvp").insert({
-            id: rsvpId,
-            member: newHost.id,
-            event: eventId,
-            status: RsvpStatus.Going,
-          }),
-          ctx.db("_members_rsvp").insert({
-            a: newHost.id,
-            b: rsvpId,
-          }),
+          ctx.db
+            .insertInto("rsvp")
+            .values({
+              id: rsvpId,
+              member: newHost.id,
+              event: eventId,
+              status: RsvpStatus.Going,
+            })
+            .execute(),
+          ctx.db
+            .insertInto("_MembersRsvp")
+            .values({
+              a: newHost.id,
+              b: rsvpId,
+            })
+            .execute(),
         ]);
       }
 
       // Is a new trail assigned?
       if (event.trail && event.trail !== "0") {
-        await ctx.db("_event_trail").insert({ a: eventId, b: event.trail });
-      } else if (existingEvent.trail && existingTrail.id && !event.trail) {
+        await ctx.db
+          .insertInto("_EventTrail")
+          .values({ a: eventId, b: event.trail })
+          .execute();
+      } else if (
+        existingEvent.trail &&
+        existingTrail &&
+        existingTrail.id &&
+        !event.trail
+      ) {
         // Remove old trail
-        await ctx.db("_event_trail").where({ a: eventId }).delete();
+        await ctx.db
+          .deleteFrom("_EventTrail")
+          .where("a", "=", eventId)
+          .execute();
       }
 
       // Is a new featured image assigned?
       if (event.newFeaturedImage) {
         const newImageId = cuid();
         // New featured image submitted
-        await ctx.db("cloudinary_image").insert({
-          id: newImageId,
-          ...convertKeysToSnakeCase(event.newFeaturedImage),
-        });
+        await ctx.db
+          .insertInto("cloudinaryImage")
+          .values({
+            id: newImageId,
+            ...convertKeysToSnakeCase(event.newFeaturedImage),
+          })
+          .execute();
 
         data.featured_image = newImageId;
       } else {
@@ -492,7 +530,7 @@ const events = {
         data.featured_image = null;
       }
 
-      await ctx.db("event").update(data).where({ id: eventId });
+      await ctx.db.updateTable("event").set(data).where("id", "=", eventId);
 
       return { message: "Your event has been updated" };
     },
@@ -511,6 +549,10 @@ const events = {
       // Requesting user has proper account status?
       hasAccountStatus(ctx.user, [AccountStatus.Active, AccountStatus.PastDue]);
 
+      if (!rsvp || !rsvp.userId) {
+        throw new Error("RSVP must be provided");
+      }
+
       // Requesting user has proper role?
       if (ctx?.user?.id !== rsvp.userId) {
         hasRole(ctx.user, [Role.Admin, Role.Officer]);
@@ -518,26 +560,27 @@ const events = {
 
       // Query the current user
       // @TODO Start back up from here
-      const [currentUser] = await ctx.db
-        .select("id", "account_status", "account_type")
-        .from("user")
-        .where({ id: rsvp.userId })
-        .limit(1);
+      const currentUser = await ctx.db
+        .selectFrom("user")
+        .select(["id", "accountStatus", "accountType"])
+        .where("id", "=", rsvp.userId)
+        .executeTakeFirst();
 
       // Query the current upcoming RSVPs
       const currentUserRsvps = await ctx.db
-        .from("rsvp")
-        .select(
+        .selectFrom("rsvp")
+        .select([
           "rsvp.id",
           "rsvp.status",
           "rsvp.event",
           "rsvp.vehicle",
-          "rsvp.guest_count",
-          "event.change_disabled",
-        )
+          "rsvp.guestCount",
+          "event.changeDisabled",
+        ])
         .innerJoin("event", "event.id", "rsvp.event")
-        .where({ "rsvp.member": rsvp.userId })
-        .andWhere("rsvp.start_time", ">=", new Date().toISOString());
+        .where("rsvp.member", "=", rsvp.userId)
+        .where((qb) => qb.and(["rsvp.startTime", ">=", new Date()]))
+        .execute();
 
       if (!currentUser) {
         throw new Error("User does not have permission");
@@ -552,14 +595,15 @@ const events = {
 
       if (currentUser.accountType === "GUEST") {
         const currentGuestRsvps = await ctx.db
-          .select("rsvp.id", "rsvp.status")
-          .from("rsvp")
+          .selectFrom("rsvp")
+          .select(["rsvp.id", "rsvp.status"])
           .innerJoin("event", "event.id", "rsvp.event")
-          .where({ "rsvp.member": rsvp.userId })
+          .where("rsvp.member", "=", rsvp.userId)
           .andWhere({ "rsvp.status": RsvpStatus.Going })
           .andWhere({ "event.type": EventType.Run })
           .andWhere("rsvp.start_time", ">=", new Date().toISOString())
-          .limit(4);
+          .limit(4)
+          .execute();
 
         if (
           currentGuestRsvps[0].length >= 3 &&

@@ -24,6 +24,11 @@ export interface _EventTrail {
   b: string;
 }
 
+export interface _MembersRsvp {
+  a: string;
+  b: string;
+}
+
 export interface _RunCondition {
   a: string;
   b: string;
@@ -313,6 +318,7 @@ export interface DB {
   _BallotToElection: _BallotToElection;
   _CandidateUser: _CandidateUser;
   _EventTrail: _EventTrail;
+  _MembersRsvp: _MembersRsvp;
   _RunCondition: _RunCondition;
   _RunReporter: _RunReporter;
   _TrailRunReport: _TrailRunReport;

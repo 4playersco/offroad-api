@@ -1,6 +1,6 @@
 import db from "@/db/client";
 
 const getMyself = async (userId: string) =>
-  db.select("*").from("user").where(`id = ${userId}`);
+  db.selectFrom("user").selectAll().where("id", "=", `${userId}`);
 
 export default getMyself;

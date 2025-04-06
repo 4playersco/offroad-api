@@ -1,11 +1,11 @@
 import { JsonWebKey } from "crypto";
 import jwt from "jsonwebtoken";
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 
 // Decode the JWT to get user ID on each request
 async function getUserIdFromToken(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) {
   const { token } = req.cookies;
